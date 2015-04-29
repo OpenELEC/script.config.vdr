@@ -54,4 +54,5 @@ if __name__ == '__main__':
         import scan
     elif lIntResult == 1:
         import diseqc
-    
+    else:
+        pass
