@@ -1,0 +1,3 @@
+.gitignore export-ignore
+.gitattributes export-ignore
+create_zip.sh export-ignore
