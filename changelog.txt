@@ -1,3 +1,7 @@
+2015-05-06 v1.0.8
+  (add) support for usals in custom config
+  (chg) fix port addressing in diseqc 1.0
+  
 2015-05-04 v1.0.7
   (chg) license text changes and fixes
 
