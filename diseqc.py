@@ -359,10 +359,10 @@ class cWinDiSEqC(xbmcgui.WindowXMLDialog):
                 elif self.lStrDiSEqCMode['mode'] == "3":
                     lArrDual = ['W50 t', 'W50 T'] if lDicLnb['dual'] == "1" else ['','']
                     if lDicLnb['dual'] == "1":
-                        lStrLine += "%s %s %s %s t v W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lDicLnb['LnbSLOF'], lArrPol[0], lDicLnb['LnbFrequLo'], (2 + ((lIntEntry) * 4)), lArrDual[0])
+                        lStrLine += "%s %s %s %s t v W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lDicLnb['LnbSLOF'], lArrPol[0], lDicLnb['LnbFrequLo'], (0 + ((lIntEntry) * 4)), lArrDual[0])
                         lStrLine += "%s %s %s %s t V W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lDicLnb['LnbSLOF'], lArrPol[1], lDicLnb['LnbFrequLo'], (2 + ((lIntEntry) * 4)), lArrDual[0])   
-                    lStrLine += "%s 99999 %s %s t v W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lArrPol[0], lDicLnb['LnbFrequHi'], (2 + ((lIntEntry) * 4)), lArrDual[1])
-                    lStrLine += "%s 99999 %s %s t V W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lArrPol[1], lDicLnb['LnbFrequHi'], (2 + ((lIntEntry) * 4)), lArrDual[1]) 
+                    lStrLine += "%s 99999 %s %s t v W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lArrPol[0], lDicLnb['LnbFrequHi'], (1 + ((lIntEntry) * 4)), lArrDual[1])
+                    lStrLine += "%s 99999 %s %s t V W50 [E0 00 00] W50 [E0 00 03] W150 [E0 10 38 F%X] %s\n" % (lDicLnb['sat'], lArrPol[1], lDicLnb['LnbFrequHi'], (3 + ((lIntEntry) * 4)), lArrDual[1]) 
                     
                 elif self.lStrDiSEqCMode['mode'] == "4":
                     lArrDual = ['W50 t', 'W50 T'] if lDicLnb['dual'] == "1" else ['','']
