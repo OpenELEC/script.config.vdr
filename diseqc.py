@@ -39,6 +39,7 @@ import xbmcaddon
 import xbmcplugin
 
 import httplib
+import rotor_calc
 
 XBMC_USER_HOME = os.environ.get('XBMC_USER_HOME', '/storage/.kodi')
 
@@ -665,8 +666,8 @@ class cWinDiSEqC(xbmcgui.WindowXMLDialog):
         lStrIndex = lObjItem.getProperty('idx')
         if self.lIntSelectedConfig == -1:
             self.lIntSelectedConfig = self.getControl(1000).getSelectedPosition()      
-        #lArrValue = [_(32148), _(32149), _(32305), _(32151)]
-        lArrValue = [_(32148), _(32149), _(32151)]
+        lArrValue = [_(32148), _(32149), _(32305), _(32151)]
+        #lArrValue = [_(32148), _(32149), _(32151)]
         lObjSelectDialog = xbmcgui.Dialog()
         lIntResult = lObjSelectDialog.select(_(32150), lArrValue)
         if lIntResult == 0: #Set Switch
@@ -730,7 +731,7 @@ class cWinDiSEqC(xbmcgui.WindowXMLDialog):
                 self.lDicDiSEqCLNBs[lStrConfig]['commands'][str(lIntCmdEntry)] = {'name':32149, 'value':str(lIntReturn), 
                     'mode':"DiSEqC-1.2", 'cmd':lStrCommand}            
                 
-        elif lIntResult == 555: #Set Position (USALS)
+        elif lIntResult == 2: #Set Position (USALS)
             lObjDialog = xbmcDialog = xbmcgui.Dialog()
             lDblLong = float(lObjDialog.input(_(32306), ''))
             if lDblLong >= 0:
@@ -738,104 +739,35 @@ class cWinDiSEqC(xbmcgui.WindowXMLDialog):
                 if lDblLat >= 0:                
                     lDblSat = float(lObjDialog.input(_(32308), ''))
                     if lDblSat >= 0:
-                        lDblHA = self.calcSatHourangle(lDblSat, lDblLat, lDblLong)
+                        lDblHA = rotor_calc.calcSatHourangle(lDblSat, lDblLat, lDblLong)
                         if lDblLat >= 0:
-                            rotorCmd = self.azimuth2Rotorcode(180 - lDblHA)
+                            rotorCmd = rotor_calc.azimuth2Rotorcode(180 - lDblHA)
                             if lDblHA <= 180:
                                 rotorCmd |= 0xE000
                             else:
                                 rotorCmd |= 0xD000
                         else: 
                             if lDblHA <= 180:
-                                rotorCmd = self.azimuth2Rotorcode(lDblHA) | 0xD000
+                                rotorCmd = rotor_calc.azimuth2Rotorcode(lDblHA) | 0xD000
                             else:
-                                rotorCmd = self.azimuth2Rotorcode(360 - lDblHA) | 0xE000                       
+                                rotorCmd = rotor_calc.azimuth2Rotorcode(360 - lDblHA) | 0xE000                       
                         lStrCommand = "W50 [E0 31 60] W150 [E010%X]" % rotorCmd  
-                        self.lDicDiSEqCLNBs[lStrConfig]['commands'][str(lIntCmdEntry)] = {'name':32149, 'value':str(lIntReturn), 
+                        
+                        if str(lStrIndex) != '':
+                            lIntCmdEntry = lStrIndex
+                        else:
+                            if len(self.lDicDiSEqCLNBs[lStrConfig]['commands']) == 0:
+                                lIntCmdEntry = 1
+                            else:                   
+                                lIntCmdEntry = max(int(x) for x in self.lDicDiSEqCLNBs[lStrConfig]['commands'].keys()) + 1
+                            
+                        self.lDicDiSEqCLNBs[lStrConfig]['commands'][str(lIntCmdEntry)] = {'name':32149, 'value':'USALS', 
                             'mode':"DiSEqC-1.2", 'cmd':lStrCommand}  
                     
-        elif lIntResult == 2: #Delete
+        elif lIntResult == 3: #Delete
             del self.lDicDiSEqCLNBs[lStrConfig]['commands'][lStrIndex]
 
         self.fncLnbConfigMenu(lObjItem)
-        
-    def azimuth2Rotorcode(self, angle):
-        gotoXtable = (0x00, 0x02, 0x03, 0x05, 0x06, 0x08, 0x0A, 0x0B, 0x0D, 0x0E)
-        a = int(round(abs(angle) * 10.0))
-        return ((a / 10) << 4) + gotoXtable[a % 10]
-        
-    def calcElevation(self, SatLon, SiteLat, SiteLon, Height_over_ocean = 0):
-        a0 =  0.58804392
-        a1 = -0.17941557
-        a2 =  0.29906946E-1
-        a3 = -0.25187400E-2
-        a4 =  0.82622101E-4
-        f = 1.00 / 298.257 # Earth flattning factor
-        r_sat = 42164.57 # Distance from earth centre to satellite
-        r_eq = 6378.14  # Earth radius        
-        sinRadSiteLat = math.sin(math.radians(SiteLat))
-        cosRadSiteLat = math.cos(math.radians(SiteLat))
-        Rstation = r_eq / (math.sqrt( 1.00 - f * (2.00 - f) * sinRadSiteLat **2))
-        Ra = (Rstation + Height_over_ocean) * cosRadSiteLat
-        Rz = Rstation * (1.00 - f) * (1.00 - f) * sinRadSiteLat
-        alfa_rx = r_sat * math.cos(math.radians(SatLon - SiteLon)) - Ra
-        alfa_ry = r_sat * math.sin(math.radians(SatLon - SiteLon))
-        alfa_rz = -Rz
-        alfa_r_north = -alfa_rx * sinRadSiteLat + alfa_rz * cosRadSiteLat
-        alfa_r_zenith = alfa_rx * cosRadSiteLat + alfa_rz * sinRadSiteLat
-        den = alfa_r_north **2 + alfa_ry **2
-        if den > 0:
-            El_geometric = math.degrees(math.atan(alfa_r_zenith / math.sqrt(den)))
-        else:
-            El_geometric = 90
-        x = math.fabs(El_geometric + 0.589)
-        refraction = math.fabs(a0 + (a1 + (a2 + (a3 + a4 * x) * x) * x) * x)
-        if El_geometric > 10.2:
-            El_observed = El_geometric + 0.01617 * (math.cos(math.radians(math.fabs(El_geometric)))/math.sin(math.radians(math.fabs(El_geometric))) )
-        else:
-            El_observed = El_geometric + refraction
-        if alfa_r_zenith < -3000:
-            El_observed = -99
-        return El_observed
-
-    def calcAzimuth(self, SatLon, SiteLat, SiteLon, Height_over_ocean = 0):
-        f = 1.00 / 298.257 # Earth flattning factor
-        r_sat = 42164.57 # Distance from earth centre to satellite
-        r_eq = 6378.14  # Earth radius          
-        def rev(number):
-            return number - math.floor(number / 360.0) * 360
-        sinRadSiteLat = math.sin(math.radians(SiteLat))
-        cosRadSiteLat = math.cos(math.radians(SiteLat))
-        Rstation = r_eq / (math.sqrt(1 - f * (2 - f) * sinRadSiteLat **2))
-        Ra = (Rstation + Height_over_ocean) * cosRadSiteLat
-        Rz = Rstation * (1 - f) ** 2 * sinRadSiteLat
-        alfa_rx = r_sat * math.cos(math.radians(SatLon - SiteLon)) - Ra
-        alfa_ry = r_sat * math.sin(math.radians(SatLon - SiteLon))
-        alfa_rz = -Rz
-        alfa_r_north = -alfa_rx * sinRadSiteLat + alfa_rz * cosRadSiteLat
-        if alfa_r_north < 0:
-            Azimuth = 180 + math.degrees(math.atan(alfa_ry / alfa_r_north))
-        elif alfa_r_north > 0:
-            Azimuth = rev(360 + math.degrees(math.atan(alfa_ry / alfa_r_north)))
-        else:
-            Azimuth = 0
-        return Azimuth
-    
-    def calcSatHourangle(self, SatLon, SiteLat, SiteLon):
-        Azimuth = self.calcAzimuth(SatLon, SiteLat, SiteLon )
-        Elevation = self.calcElevation(SatLon, SiteLat, SiteLon)
-        a = - math.cos(math.radians(Elevation)) * math.sin(math.radians(Azimuth))
-        b = math.sin(math.radians(Elevation)) * math.cos(math.radians(SiteLat)) - \
-            math.cos(math.radians(Elevation)) * math.sin(math.radians(SiteLat)) * \
-            math.cos(math.radians(Azimuth))
-        returnvalue = 180 + math.degrees(math.atan(a / b))
-        if Azimuth > 270:
-            returnvalue += 180
-            if returnvalue > 360:
-                returnvalue = 720 - returnvalue
-        if Azimuth < 90:
-            returnvalue = 180 - returnvalue
-        return returnvalue
     
 gWinDiSEqC = cWinDiSEqC('WinDiSEqC_window.xml', __cwd__, 'Default')
 gWinDiSEqC.doModal()
