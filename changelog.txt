@@ -1,3 +1,6 @@
+2016-04-22 v1.0.9
+  (chg) fix reading lines from sources.conf in the right order
+
 2015-05-29 v1.0.8
   (add) support for usals in custom config
   (chg) fix port addressing in diseqc 1.0
